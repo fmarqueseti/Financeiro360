@@ -17,10 +17,11 @@ Projeto desenvolvido como parte do desafio [Edu360](https://www.instagram.com/p/
 
 ## 💂️ Estrutura de Arquivos
 
-- `CADCONTA` – Contém a lista de contas cadastradas.
-- `CADTRANS` – Contém todas as transações realizadas.
+- `COB` - Contém os arquivos fontes COBOL.
+- `CPY` - Contém os COPYBOOKS dos arquivos VSAM.
+- `JCL` - Contém os arquivos JCLs.
 
-Formato dos registros:
+Formato dos registros dos arquivos VSAM:
 
 **CADCONTA**
 ```

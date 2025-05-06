@@ -17,10 +17,11 @@ This project is part of the [Edu360](https://www.instagram.com/p/DI3xL_Hx02H) ch
 
 ## 💂️ File Structure
 
-- `CADCONTA` – Contains the list of registered accounts.
-- `CADTRANS` – Contains all recorded transactions.
+- `COB` - Contains the COBOL source files.
+- `CPY` - Contains the COPYBOOKS of VSAM files.
+- `JCL` - Contains the JCL files.
 
-Record formats:
+VSAM files record formats:
 
 **CADCONTA**
 ```
