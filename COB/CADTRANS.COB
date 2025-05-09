@@ -44,7 +44,8 @@
        77  WK-FS-TRANS             PIC X(2)      VALUE SPACES.
        77  WK-FS-CADTRANS          PIC X(2)      VALUE SPACES.
        77  WK-CONTADOR             PIC 9(04)     VALUE 1.
-      ******************************************************************
+       77  WK-QNT-REG-LIDO         PIC 9(04)     VALUE ZEROS.
+     ******************************************************************
        PROCEDURE DIVISION.
        0000-PRINCIPAL SECTION.
        0010-PRINCIPAL.
@@ -115,6 +116,7 @@
                DISPLAY 'GRAVADO COM SUCESSO'
                PERFORM 0320-READ-CAD-TRANS
            END-PERFORM.
+           MOVE WK-CONTADOR TO WK-QNT-REG-LIDO.     
        0320-READ-CAD-TRANS.
            READ CAD-TRANS
                AT END
