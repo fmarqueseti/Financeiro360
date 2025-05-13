@@ -1,8 +1,11 @@
       ******************************************************************
-      * Author:
-      * Date:
-      * Purpose:
-      * Tectonics: cobc
+      * FILE NAME   : CADTRANS                                          *
+      * DATE        : 2025-05-08                                       *
+      * AUTHOR      : EDU360 COLLAB TEAM                               *
+      *               THIAGO SOUZA                                     *
+      * DATA CENTER : COMPANY.EDUC360                                  *
+      * PURPOSE     : CARREGAR TRANSAÇOES DE UM ARQUIVO SEQUENCIAL     *
+      *                PARA UM INDEXADO                                *
       ******************************************************************
        IDENTIFICATION DIVISION.
        PROGRAM-ID. CADTRANS.
@@ -60,7 +63,7 @@
        0110-OPEN-DATA.
            OPEN INPUT  CAD-TRANS.
            OPEN OUTPUT CADTRANS.
-
+      *
        0200-VALIDATE-DATA SECTION.
        0210-VALIDATE-CAD-TRANS-OPEN.
            EVALUATE WK-FS-TRANS
@@ -102,6 +105,7 @@
                            " NA ESCRITA DO ARQUIVO CADTRANS"
                    STOP RUN
            END-EVALUATE.
+      * 
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
            PERFORM 0320-READ-CAD-TRANS
@@ -124,7 +128,7 @@
                NOT AT END
                    PERFORM 0230-VALIDATE-CAD-TRANS-READ
            END-READ.
-
+      *
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
            CLOSE CAD-TRANS.
