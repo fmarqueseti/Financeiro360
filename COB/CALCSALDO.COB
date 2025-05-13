@@ -4,8 +4,7 @@
       * AUTHOR      : EDU360 COLLAB TEAM                               *
       *               THIAGO SOUZA                                     *
       * DATA CENTER : COMPANY.EDUC360                                  *
-      * PURPOSE     : CARREGAR TRANSAÇOES DE UM ARQUIVO SEQUENCIAL     *
-      *                PARA UM INDEXADO                                *
+      * PURPOSE     : CALCULAR SALDO FINAL                             *
       ******************************************************************
        IDENTIFICATION DIVISION.
        PROGRAM-ID. CALCSALDO.
@@ -51,7 +50,7 @@
            OPEN I-O   CADCONTA.
            PERFORM 0210-VALIDATE-CADCONTA-OPEN.
 
-           OPEN OUTPUT CADTRANS.
+           OPEN INPUT CADTRANS.
            PERFORM 0220-VALIDATE-CADTRANS-OPEN.
       *
        0200-VALIDATE-DATA SECTION.
@@ -100,6 +99,16 @@
                            " NA LEITURA DO ARQUIVO CADTRANS"
                    STOP RUN
            END-EVALUATE.
+      *
+       0250-VALIDATE-CADCONTA-REWRITE.
+           EVALUATE WK-FS-CADTRANS
+               WHEN "00"
+                   CONTINUE
+               WHEN OTHER
+                   DISPLAY "ERRO: " WK-FS-CADTRANS
+                           " NA REESCRITA DO ARQUIVO CADCONTA"
+                   STOP RUN
+           END-EVALUATE.    
       *     
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
@@ -115,22 +124,33 @@
               START CADTRANS KEY IS EQUAL TO CHAVE-ATUAL   
 
               PERFORM UNTIL WK-FS-CADTRANS EQUAL "10"
+                  
+                  READ CADTRANS
+                  PERFORM 0240-VALIDATE-CADTRANS-READ 
 
-                 READ CADTRANS
-                 PERFORM 0240-VALIDATE-CADTRANS-READ 
-
-                 IF IDCONTA EQUAL CHAVE-ATUAL 
-                    EVALUATE TIPO
-                       WHEN 1
-                          SUBTRACT VALOR FROM SALDOFINAL
-                       WHEN 2
-                          ADD      VALOR TO   SALDOFINAL     
-                    END-EVALUATE
-                 END-IF
+                  IF IDCONTA EQUAL CHAVE-ATUAL 
+                     EVALUATE TIPO
+                        WHEN 1
+                           SUBTRACT VALOR FROM SALDOFINAL
+                        WHEN 2
+                           ADD      VALOR TO   SALDOFINAL     
+                     END-EVALUATE
+                  END-IF
                  
+                  IF WK-FS-CADTRANS EQUAL "10"
+                     EXIT PERFORM
+                  END-IF
               END-PERFORM  
+              
+              MOVE SALDOFINAL TO SALDOINI  
 
-             
+              REWRITE REG-CTA
+              PERFORM 0250-VALIDATE-CADCONTA-REWRITE
+
+              IF WK-FS-CADCONTA EQUAL "10"
+                EXIT PERFORM
+              END-IF
+
            END-PERFORM.
 
        0400-CLOSE-DATA SECTION.
@@ -143,5 +163,5 @@
                DISPLAY "ARQUIVO FECHADO COM SUCESSO".
        0500-END-PROGRAM SECTION.
        0510-END-PROGRAM.
-       END PROGRAM CADTRANS.     
+       END PROGRAM CALCSALDO.     
                      
