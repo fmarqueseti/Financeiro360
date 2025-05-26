@@ -12,16 +12,16 @@
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT CADCONTA ASSIGN TO CADCONTA
-                           ORGANIZATION IS INDEXED
-                           ACCESS MODE IS DYNAMIC
-                           RECORD KEY IS IDCONTA
-                           FILE STATUS IS WK-FS-CADCONTA.
+           SELECT CADCONTA ASSIGN TO "C:\teste\cadconta.dat"
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS DYNAMIC
+               RECORD KEY IS IDCONTA
+               FILE STATUS IS WK-FS-CADCONTA.
 
-           SELECT CADTRANS ASSIGN TO CADTRANS
-                           ORGANIZATION IS INDEXED
-                           RECORD KEY IS FD-IDTRANS
-                           FILE STATUS IS WK-FS-CADTRANS.
+           SELECT CADTRANS ASSIGN TO "C:\teste\cadtrans.dat"
+               ORGANIZATION IS INDEXED
+               RECORD KEY IS FD-IDCONTA
+               FILE STATUS IS WK-FS-CADTRANS.
       ******************************************************************
        DATA DIVISION.
        FILE SECTION.
@@ -29,12 +29,19 @@
        COPY CADCONTA.
 
        FD  CADTRANS.
-       COPY CADTRANS.
+           01  REG-TANS.
+               03 FD-DATA            PIC 9(08).
+               03 FD-TIPO            PIC 9(01).
+               03 FD-VALOR           PIC 9(05)V9(02).
+               03 FD-DESCR           PIC X(05).
+               03 FD-IDCONTA         PIC 9(04).
+               03 FILLER             PIC X(14).
 
        WORKING-STORAGE SECTION.
        77  WK-FS-CADCONTA             PIC X(02)    VALUE ZEROS.
        77  WK-FS-CADTRANS             PIC X(02)    VALUE ZEROS.
        77  SALDOFINAL                 PIC 9(06)V99 VALUE ZEROS.
+
 
       ******************************************************************
        PROCEDURE DIVISION.
@@ -43,8 +50,8 @@
            PERFORM 0110-OPEN-DATA.
            PERFORM 0310-PROCESS-DATA.
            PERFORM 0400-CLOSE-DATA.
-           PERFORM 0500-END-PROGRAM. 
-
+           PERFORM 0500-END-PROGRAM.
+      ******************************************************************
        0100-OPEN-DATA SECTION.
        0110-OPEN-DATA.
            OPEN I-O   CADCONTA.
@@ -52,10 +59,10 @@
 
            OPEN INPUT CADTRANS.
            PERFORM 0220-VALIDATE-CADTRANS-OPEN.
-      *
+      ******************************************************************      
        0200-VALIDATE-DATA SECTION.
        0210-VALIDATE-CADCONTA-OPEN.
-           EVALUATE WK-FS-CADCONTA 
+           EVALUATE WK-FS-CADCONTA
                WHEN "00"
                    CONTINUE
                WHEN "10"
@@ -65,7 +72,7 @@
                            " NA ABERTURA DO ARQUIVO CADCONTA"
                    STOP RUN
            END-EVALUATE.
-      *     
+      *
        0220-VALIDATE-CADTRANS-OPEN.
            EVALUATE WK-FS-CADTRANS
                WHEN "00"
@@ -75,7 +82,7 @@
                            " NA ABERTURA DO ARQUIVO CADTRANS"
                    STOP RUN
            END-EVALUATE.
-      *     
+      *
        0230-VALIDATE-CADCONTA-READ.
            EVALUATE WK-FS-CADCONTA
                WHEN "00"
@@ -86,7 +93,7 @@
                    DISPLAY "ERRO: " WK-FS-CADCONTA
                            " NA LEITURA DO ARQUIVO CADCONTA"
                    STOP RUN
-           END-EVALUATE.    
+           END-EVALUATE.
       *
        0240-VALIDATE-CADTRANS-READ.
            EVALUATE WK-FS-CADTRANS
@@ -108,41 +115,51 @@
                    DISPLAY "ERRO: " WK-FS-CADTRANS
                            " NA REESCRITA DO ARQUIVO CADCONTA"
                    STOP RUN
-           END-EVALUATE.    
-      *     
+           END-EVALUATE.
+      ******************************************************************      
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
            PERFORM UNTIL WK-FS-CADCONTA EQUAL "10"
 
               READ CADCONTA
               PERFORM 0230-VALIDATE-CADCONTA-READ
-      
-              MOVE IDCONTA TO CHAVE-ATUAL
-    
+
               MOVE SALDOINI TO SALDOFINAL
 
-              START CADTRANS KEY IS EQUAL TO CHAVE-ATUAL   
+      *----> Começa o arquivo de transaçôes na chave atual do arquivo de contas
+               MOVE IDCONTA TO FD-IDCONTA
+               
+               IF IDCONTA = ZEROS
+                   DISPLAY "CHAVE ZERADA ENCONTRADA"
+                   MOVE "10" TO WK-FS-CADCONTA
+                   EXIT PERFORM
+               END-IF
+               
+               START CADTRANS KEY IS EQUAL TO FD-IDCONTA
+                   INVALID KEY
+                       DISPLAY "ERRO: START FALHOU PARA CHAVE: " 
+                                                              FD-IDCONTA
+                       MOVE "10" TO WK-FS-CADTRANS
+               END-START
 
               PERFORM UNTIL WK-FS-CADTRANS EQUAL "10"
-                  
-                  READ CADTRANS
-                  PERFORM 0240-VALIDATE-CADTRANS-READ 
 
-                  IF IDCONTA EQUAL CHAVE-ATUAL 
-                     EVALUATE TIPO
-                        WHEN 1
-                           SUBTRACT VALOR FROM SALDOFINAL
-                        WHEN 2
-                           ADD      VALOR TO   SALDOFINAL     
-                     END-EVALUATE
-                  END-IF
-                 
+                  READ CADTRANS
+                  PERFORM 0240-VALIDATE-CADTRANS-READ
+                  
+                  EVALUATE FD-TIPO
+                      WHEN 1
+                      SUBTRACT FD-VALOR FROM SALDOFINAL
+                      WHEN 2
+                      ADD      FD-VALOR TO   SALDOFINAL
+                  END-EVALUATE
+
                   IF WK-FS-CADTRANS EQUAL "10"
                      EXIT PERFORM
                   END-IF
-              END-PERFORM  
-              
-              MOVE SALDOFINAL TO SALDOINI  
+              END-PERFORM
+
+              MOVE SALDOFINAL TO SALDOINI
 
               REWRITE REG-CTA
               PERFORM 0250-VALIDATE-CADCONTA-REWRITE
@@ -152,7 +169,7 @@
               END-IF
 
            END-PERFORM.
-
+      ******************************************************************
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
            CLOSE CADCONTA.
@@ -161,7 +178,7 @@
                DISPLAY "ERRO AO FECHAR O ARQUIVO:" WK-FS-CADCONTA
            ELSE
                DISPLAY "ARQUIVO FECHADO COM SUCESSO".
+      ******************************************************************       
        0500-END-PROGRAM SECTION.
        0510-END-PROGRAM.
-       END PROGRAM CALCSALDO.     
-                     
+       END PROGRAM CALCSALDO.
