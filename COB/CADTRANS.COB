@@ -4,7 +4,7 @@
       * AUTHOR      : EDU360 COLLAB TEAM                               *
       *               THIAGO SOUZA                                     *
       * DATA CENTER : COMPANY.EDUC360                                  *
-      * PURPOSE     : CARREGAR TRANSAÇOES DE UM ARQUIVO SEQUENCIAL     *
+      * PURPOSE     : CARREGAR TRANSAÃ‡OES DE UM ARQUIVO SEQUENCIAL     *
       *                PARA UM INDEXADO                                *
       ******************************************************************
        IDENTIFICATION DIVISION.
@@ -14,18 +14,27 @@
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT CAD-TRANS ASSIGN TO
-                       "C:\cad-trans.txt"
-           ORGANIZATION IS SEQUENTIAL
+                       "C:\teste\cad-trans.txt"
+           ORGANIZATION IS LINE SEQUENTIAL
            FILE STATUS IS WK-FS-TRANS.
 
            SELECT CADTRANS ASSIGN TO
-                       "cadtrans.dat"
+                       "C:\teste\cadtrans.dat"
            ORGANIZATION IS INDEXED
+           ACCESS MODE IS SEQUENTIAL
            RECORD KEY IS FD-IDTRANS
            FILE STATUS IS WK-FS-CADTRANS.
       ******************************************************************
        DATA DIVISION.
        FILE SECTION.
+       FD CAD-TRANS.
+       01 REG-CAD-TRANS.
+           03 CAD-DATA              PIC 9(08).
+           03 CAD-TIPO              PIC 9.
+           03 CAD-VALOR             PIC 9(5)V99.
+           03 CAD-DESCR             PIC X(5).
+           03 CAD-IDCONTA           PIC 9(04).
+       
        FD CADTRANS.
        01 REG-CADTRANS.
            03 FD-DATA              PIC 9(08).
@@ -34,14 +43,6 @@
            03 FD-DESCR             PIC X(5).
            03 FD-IDCONTA           PIC 9(04).
            03 FD-IDTRANS           PIC 9(08).
-
-       FD CAD-TRANS.
-       01 REG-CAD-TRANS.
-           03 FD-DATA              PIC 9(08).
-           03 FD-TIPO              PIC 9.
-           03 FD-VALOR             PIC 9(5)V99.
-           03 FD-DESCR             PIC X(5).
-           03 FD-IDCONTA           PIC 9(04).
 
        WORKING-STORAGE SECTION.
        77  WK-FS-TRANS             PIC X(2)      VALUE SPACES.
@@ -105,22 +106,37 @@
                            " NA ESCRITA DO ARQUIVO CADTRANS"
                    STOP RUN
            END-EVALUATE.
-      * 
+      *
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
            PERFORM 0320-READ-CAD-TRANS
            PERFORM UNTIL WK-FS-TRANS = "10"
                PERFORM 0230-VALIDATE-CAD-TRANS-READ
+               
                MOVE REG-CAD-TRANS TO REG-CADTRANS
+               
                MOVE WK-CONTADOR TO FD-IDTRANS
+               
+      *----> DISPLAY DO REGISTRO ANTES DE GRAVAR
+               PERFORM 0331-MOSTRA-REGISTRO-ANTES
+               
                WRITE REG-CADTRANS
+               
+      *----> DISPLAY DO REGISTRO DEPOIS DE GRAVAR     
+               PERFORM 0330-MOSTRA-REGISTRO-DEPOIS
+               
                ADD 1 TO WK-CONTADOR
-               DISPLAY WK-CONTADOR
+               
                PERFORM 0240-VALIDATE-CADTRANS-WRITE
+               
                DISPLAY 'GRAVADO COM SUCESSO'
+               
                PERFORM 0320-READ-CAD-TRANS
+               
            END-PERFORM.
-           MOVE WK-CONTADOR TO WK-QNT-REG-LIDO.     
+               
+           MOVE WK-CONTADOR TO WK-QNT-REG-LIDO.
+           
        0320-READ-CAD-TRANS.
            READ CAD-TRANS
                AT END
@@ -129,6 +145,24 @@
                    PERFORM 0230-VALIDATE-CAD-TRANS-READ
            END-READ.
       *
+       0330-MOSTRA-REGISTRO-DEPOIS.
+           DISPLAY "======DEPOIS=============".
+           DISPLAY "DATA....." FD-DATA.
+           DISPLAY "TIPO....." FD-TIPO.
+           DISPLAY "VALOR...." FD-VALOR.
+           DISPLAY "DESCR...." FD-DESCR.
+           DISPLAY "IDCONTA.." FD-IDCONTA.
+           DISPLAY "=========================".
+      *
+       0331-MOSTRA-REGISTRO-ANTES.
+           DISPLAY "======ANTES==============".
+           DISPLAY "DATA....." CAD-DATA.
+           DISPLAY "TIPO....." CAD-TIPO.
+           DISPLAY "VALOR...." CAD-VALOR.
+           DISPLAY "DESCR...." CAD-DESCR.
+           DISPLAY "IDCONTA.." CAD-IDCONTA.    
+           DISPLAY "=========================".
+           
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
            CLOSE CAD-TRANS.
