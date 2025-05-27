@@ -34,7 +34,7 @@
            03 CAD-VALOR             PIC 9(5)V99.
            03 CAD-DESCR             PIC X(5).
            03 CAD-IDCONTA           PIC 9(04).
-       
+
        FD CADTRANS.
        01 REG-CADTRANS.
            03 FD-DATA              PIC 9(08).
@@ -54,17 +54,17 @@
        0000-PRINCIPAL SECTION.
        0010-PRINCIPAL.
            PERFORM 0110-OPEN-DATA.
-           PERFORM 0210-VALIDATE-CAD-TRANS-OPEN  THRU
-                   0220-VALIDATE-CADTRANS-OPEN.
+           PERFORM 0210-VALIDATE-CAD-TRANS-OPEN.
+           PERFORM 0220-VALIDATE-CADTRANS-OPEN.
            PERFORM 0310-PROCESS-DATA UNTIL WK-FS-TRANS  EQUAL "10".
            PERFORM 0410-CLOSE-DATA.
-
+           PERFORM 0500-END-PROGRAM.
       ******************************************************************
        0100-OPEN-DATA SECTION.
        0110-OPEN-DATA.
            OPEN INPUT  CAD-TRANS.
            OPEN OUTPUT CADTRANS.
-      *
+      ******************************************************************
        0200-VALIDATE-DATA SECTION.
        0210-VALIDATE-CAD-TRANS-OPEN.
            EVALUATE WK-FS-TRANS
@@ -106,46 +106,48 @@
                            " NA ESCRITA DO ARQUIVO CADTRANS"
                    STOP RUN
            END-EVALUATE.
-      *
+      ******************************************************************
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
-           PERFORM 0320-READ-CAD-TRANS
-           PERFORM UNTIL WK-FS-TRANS = "10"
-               PERFORM 0230-VALIDATE-CAD-TRANS-READ
-               
-               MOVE REG-CAD-TRANS TO REG-CADTRANS
-               
-               MOVE WK-CONTADOR TO FD-IDTRANS
-               
-      *----> DISPLAY DO REGISTRO ANTES DE GRAVAR
-               PERFORM 0331-MOSTRA-REGISTRO-ANTES
-               
-               WRITE REG-CADTRANS
-               
-      *----> DISPLAY DO REGISTRO DEPOIS DE GRAVAR     
-               PERFORM 0330-MOSTRA-REGISTRO-DEPOIS
-               
-               ADD 1 TO WK-CONTADOR
-               
-               PERFORM 0240-VALIDATE-CADTRANS-WRITE
-               
-               DISPLAY 'GRAVADO COM SUCESSO'
-               
-               PERFORM 0320-READ-CAD-TRANS
-               
-           END-PERFORM.
-               
-           MOVE WK-CONTADOR TO WK-QNT-REG-LIDO.
-           
-       0320-READ-CAD-TRANS.
            READ CAD-TRANS
                AT END
                    MOVE "10" TO WK-FS-TRANS
                NOT AT END
                    PERFORM 0230-VALIDATE-CAD-TRANS-READ
+                   MOVE REG-CAD-TRANS TO REG-CADTRANS
+
+      *----> DISPLAY DO REGISTRO ANTES DE GRAVAR
+                   PERFORM 0330-MOSTRA-REGISTRO-ANTES
+
+                   MOVE WK-CONTADOR TO FD-IDTRANS
+
+                   ADD 1 TO WK-CONTADOR
+
+                   WRITE REG-CADTRANS
+                   PERFORM 0240-VALIDATE-CADTRANS-WRITE
+
+      *----> DISPLAY DO REGISTRO DEPOIS DE GRAVAR
+                   PERFORM 0331-MOSTRA-REGISTRO-DEPOIS
+
+                   MOVE WK-CONTADOR TO FD-IDTRANS
+
+                   ADD 1 TO WK-CONTADOR
+
+                   DISPLAY 'GRAVADO COM SUCESSO'
            END-READ.
+
+           MOVE WK-CONTADOR TO WK-QNT-REG-LIDO.
       *
-       0330-MOSTRA-REGISTRO-DEPOIS.
+       0330-MOSTRA-REGISTRO-ANTES.
+           DISPLAY "======ANTES==============".
+           DISPLAY "DATA....." CAD-DATA.
+           DISPLAY "TIPO....." CAD-TIPO.
+           DISPLAY "VALOR...." CAD-VALOR.
+           DISPLAY "DESCR...." CAD-DESCR.
+           DISPLAY "IDCONTA.." CAD-IDCONTA.
+           DISPLAY "=========================".
+      *
+       0331-MOSTRA-REGISTRO-DEPOIS.
            DISPLAY "======DEPOIS=============".
            DISPLAY "DATA....." FD-DATA.
            DISPLAY "TIPO....." FD-TIPO.
@@ -153,16 +155,7 @@
            DISPLAY "DESCR...." FD-DESCR.
            DISPLAY "IDCONTA.." FD-IDCONTA.
            DISPLAY "=========================".
-      *
-       0331-MOSTRA-REGISTRO-ANTES.
-           DISPLAY "======ANTES==============".
-           DISPLAY "DATA....." CAD-DATA.
-           DISPLAY "TIPO....." CAD-TIPO.
-           DISPLAY "VALOR...." CAD-VALOR.
-           DISPLAY "DESCR...." CAD-DESCR.
-           DISPLAY "IDCONTA.." CAD-IDCONTA.    
-           DISPLAY "=========================".
-           
+      ******************************************************************
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
            CLOSE CAD-TRANS.
@@ -171,6 +164,8 @@
                DISPLAY "ERRO AO FECHAR O ARQUIVO:" WK-FS-CADTRANS
            ELSE
                DISPLAY "ARQUIVO FECHADO COM SUCESSO".
+      ******************************************************************
        0500-END-PROGRAM SECTION.
        0510-END-PROGRAM.
+           STOP RUN.
        END PROGRAM CADTRANS.
