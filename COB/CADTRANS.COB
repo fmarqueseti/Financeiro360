@@ -23,6 +23,8 @@
            ORGANIZATION IS INDEXED
            ACCESS MODE IS SEQUENTIAL
            RECORD KEY IS FD-IDTRANS
+           ALTERNATE KEY IS FD-IDCONTA
+           WITH DUPLICATES
            FILE STATUS IS WK-FS-CADTRANS.
       ******************************************************************
        DATA DIVISION.
