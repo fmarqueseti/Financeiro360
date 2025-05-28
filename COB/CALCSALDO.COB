@@ -63,11 +63,9 @@
        0110-OPEN-DATA.
            OPEN I-O   CADCONTA.
            PERFORM 0210-VALIDATE-CADCONTA-OPEN.
-           DISPLAY "ABRIU ARQUIVO CADCONTA".
 
            OPEN INPUT CADTRANS.
            PERFORM 0220-VALIDATE-CADTRANS-OPEN.
-           DISPLAY "ABRIU ARQUIVO CADTRANS".
       ******************************************************************
        0200-VALIDATE-DATA SECTION.
        0210-VALIDATE-CADCONTA-OPEN.
@@ -127,18 +125,17 @@
            END-EVALUATE.
       ******************************************************************
        0300-PROCESS-DATA SECTION.
-       0310-PROCESS-DATA. 
+       0310-PROCESS-DATA.
            READ CADCONTA
                AT END
                    MOVE "10" TO WK-FS-CADCONTA
            END-READ.
            PERFORM 0230-VALIDATE-CADCONTA-READ.
-           
+
            MOVE IDCONTA TO FD-IDCONTA.
-           DISPLAY "FD-IDCONTA.........." FD-IDCONTA.
-           
+
            PERFORM 0320-VERIFICA-TRANSACAO.
-           
+
            IF TEM-TRANSACAO
                MOVE SALDOFINAL TO SALDOINI
                REWRITE REG-CTA
@@ -147,25 +144,27 @@
            END-IF.
       *
        0320-VERIFICA-TRANSACAO.
-           SET NAO-TEM-TRANSACAO           TO TRUE. 
+           SET NAO-TEM-TRANSACAO           TO TRUE.
            MOVE SALDOINI TO SALDOFINAL.
-           
+
            MOVE IDCONTA TO FD-IDTRANS
-          
-           START CADTRANS KEY IS EQUAL FD-IDTRANS
+
+           START CADTRANS KEY IS EQUAL FD-IDCONTA
                INVALID KEY
                    DISPLAY "SEM TRANSACOES NA CONTA...." FD-IDCONTA
                    EXIT PARAGRAPH
            END-START.
-           PERFORM 0321-LE-TRANSACOES UNTIL WK-FS-CADTRANS EQUAL "10".               
-      *                
-       0321-LE-TRANSACOES. 
+           PERFORM 0321-LE-TRANSACOES UNTIL WK-FS-CADTRANS EQUAL "10".
+      *
+       0321-LE-TRANSACOES.
            READ CADTRANS NEXT
                AT END
                    MOVE "10" TO WK-FS-CADTRANS
                    EXIT PARAGRAPH
            END-READ.
-           PERFORM 0240-VALIDATE-CADTRANS-READ
+           PERFORM 0240-VALIDATE-CADTRANS-READ.
+
+           PERFORM 0499-MOSTRA-REGISTRO.
 
            IF FD-IDCONTA LESS THAN IDCONTA
                EXIT PARAGRAPH
@@ -173,8 +172,8 @@
 
            IF FD-IDCONTA GREATER THAN IDCONTA
                EXIT PARAGRAPH
-           END-IF    
-           
+           END-IF
+
            IF FD-IDCONTA EQUAL IDCONTA
                SET TEM-TRANSACAO           TO TRUE
                EVALUATE FD-TIPO
@@ -183,7 +182,19 @@
                    WHEN 2
                        ADD      FD-VALOR TO SALDOFINAL
                END-EVALUATE
-           END-IF.   
+           END-IF.
+
+      *---> Mostra registro antes de reescrever
+       0499-MOSTRA-REGISTRO.
+           DISPLAY "==========REGISTRO CADTRANS==========".
+           DISPLAY "DATA...................... " FD-DATA.
+           DISPLAY "TIPO...................... " FD-TIPO.
+           DISPLAY "VALOR..................... " FD-VALOR.
+           DISPLAY "DESCR..................... " FD-DESCR.
+           DISPLAY "IDCONTA................... " FD-IDCONTA.
+           DISPLAY "IDTRANS................... " FD-IDTRANS.
+           DISPLAY "=====================================".
+           DISPLAY "                                     ".
       ******************************************************************
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
