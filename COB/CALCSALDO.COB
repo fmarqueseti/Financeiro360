@@ -23,6 +23,7 @@
                ACCESS MODE  IS DYNAMIC
                RECORD KEY   IS FD-IDTRANS
                ALTERNATE RECORD KEY IS FD-IDCONTA
+               WITH DUPLICATES
                FILE STATUS  IS WK-FS-CADTRANS.
       ******************************************************************
        DATA DIVISION.
@@ -43,9 +44,8 @@
        77  WK-FS-CADCONTA            PIC X(02)    VALUE ZEROS.
        77  WK-FS-CADTRANS            PIC X(02)    VALUE ZEROS.
        77  SALDOFINAL                PIC 9(06)V99 VALUE ZEROS.
-       77  WK-CHAVEATUAL             PIC 9(04)    VALUE ZEROS.
-       77  WK-ULTIMO-IDTRANS         PIC 9(08)    VALUE ZEROS.
 
+       77  WK-ULTIMO-IDTRANS         PIC 9(08)    VALUE ZEROS.
 
        01 WK-TRANSACAO-ENCONTRADA    PIC X        VALUE "N".
            88 TEM-TRANSACAO                       VALUE "S".
@@ -124,7 +124,8 @@
                WHEN OTHER
                    DISPLAY "ERRO: " WK-FS-CADCONTA
                            " NA REESCRITA DO ARQUIVO CADCONTA"
-                   PERFORM 0410-CLOSE-DATA THRU 0510-END-PROGRAM
+                   PERFORM 0410-CLOSE-DATA
+                   PERFORM 0510-END-PROGRAM
            END-EVALUATE.
       ******************************************************************
        0300-PROCESS-DATA SECTION.
@@ -135,7 +136,6 @@
                        MOVE "10" TO WK-FS-CADCONTA
                    NOT AT END
                        PERFORM 0230-VALIDATE-CADCONTA-READ
-                       MOVE IDCONTA TO FD-IDCONTA
                        PERFORM 0320-VERIFICA-TRANSACAO
 
                        IF TEM-TRANSACAO
@@ -149,7 +149,7 @@
       *
        0320-VERIFICA-TRANSACAO.
            SET     NAO-TEM-TRANSACAO      TO TRUE.
-           MOVE    IDCONTA                TO WK-CHAVEATUAL.
+           MOVE    IDCONTA                TO FD-IDCONTA.
            MOVE    SALDOINI               TO SALDOFINAL.
            MOVE    ZEROS                  TO WK-ULTIMO-IDTRANS.
            MOVE    "00"                   TO WK-FS-CADTRANS.
@@ -161,23 +161,25 @@
                    EXIT PARAGRAPH
            END-START.
 
-           PERFORM UNTIL WK-FS-CADTRANS NOT EQUAL "00" OR
-                           FD-IDCONTA   NOT EQUAL WK-CHAVEATUAL
+           PERFORM UNTIL WK-FS-CADTRANS EQUAL "10"
                READ CADTRANS NEXT
                    AT END
                        MOVE "10" TO WK-FS-CADTRANS
                        EXIT PARAGRAPH
                    NOT AT END
+
+                       IF FD-IDCONTA NOT EQUAL IDCONTA
+                           EXIT PERFORM
+                       END-IF
+
                        PERFORM 0240-VALIDATE-CADTRANS-READ
-                       DISPLAY "LIDO TRANSACAO - CONTA: " FD-IDCONTA
-                       
+
                        IF FD-IDTRANS EQUAL WK-ULTIMO-IDTRANS
                            CONTINUE
                        ELSE
                            MOVE FD-IDTRANS     TO WK-ULTIMO-IDTRANS
-                           SET TEM-TRANSACAO   TO TRUE
-                           PERFORM 0499-MOSTRA-REGISTRO
-                           
+                           DISPLAY "NOVO ID TRANS.."WK-ULTIMO-IDTRANS
+
                            EVALUATE FD-TIPO
                                WHEN 1
                                    SUBTRACT FD-VALOR FROM SALDOFINAL
@@ -187,22 +189,13 @@
                                    DISPLAY "CREDITO: " FD-VALOR
                            END-EVALUATE
                            DISPLAY "SALDO PARCIAL: " SALDOFINAL
+
                        END-IF
+                       SET TEM-TRANSACAO   TO TRUE
                END-READ
            END-PERFORM.
 
            DISPLAY "TOTAL CONTA " IDCONTA ": " SALDOFINAL.
-      *---> Mostra registro antes de reescrever
-       0499-MOSTRA-REGISTRO.
-           DISPLAY "==========REGISTRO CADTRANS==========".
-           DISPLAY "DATA...................... " FD-DATA.
-           DISPLAY "TIPO...................... " FD-TIPO.
-           DISPLAY "VALOR..................... " FD-VALOR.
-           DISPLAY "DESCR..................... " FD-DESCR.
-           DISPLAY "IDCONTA................... " FD-IDCONTA.
-           DISPLAY "IDTRANS................... " FD-IDTRANS.
-           DISPLAY "=====================================".
-           DISPLAY "                                     ".
       ******************************************************************
        0400-CLOSE-DATA SECTION.
        0410-CLOSE-DATA.
