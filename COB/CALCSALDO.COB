@@ -43,6 +43,9 @@
        77  WK-FS-CADCONTA            PIC X(02)    VALUE ZEROS.
        77  WK-FS-CADTRANS            PIC X(02)    VALUE ZEROS.
        77  SALDOFINAL                PIC 9(06)V99 VALUE ZEROS.
+       77  WK-CHAVEATUAL             PIC 9(04)    VALUE ZEROS.
+       77  WK-ULTIMO-IDTRANS         PIC 9(08)    VALUE ZEROS.
+
 
        01 WK-TRANSACAO-ENCONTRADA    PIC X        VALUE "N".
            88 TEM-TRANSACAO                       VALUE "S".
@@ -130,7 +133,7 @@
                READ CADCONTA
                    AT END
                        MOVE "10" TO WK-FS-CADCONTA
-                   NOT AT END    
+                   NOT AT END
                        PERFORM 0230-VALIDATE-CADCONTA-READ
                        MOVE IDCONTA TO FD-IDCONTA
                        PERFORM 0320-VERIFICA-TRANSACAO
@@ -141,14 +144,15 @@
                            PERFORM 0250-VALIDATE-CADCONTA-REWRITE
                            DISPLAY "REESCRITO SUCESSO - CONTA: "IDCONTA
                        END-IF
-               END-READ       
+               END-READ
            END-PERFORM.
       *
        0320-VERIFICA-TRANSACAO.
            SET     NAO-TEM-TRANSACAO      TO TRUE.
+           MOVE    IDCONTA                TO WK-CHAVEATUAL.
            MOVE    SALDOINI               TO SALDOFINAL.
-           
-           MOVE "00" TO WK-FS-CADTRANS.
+           MOVE    ZEROS                  TO WK-ULTIMO-IDTRANS.
+           MOVE    "00"                   TO WK-FS-CADTRANS.
 
            START CADTRANS KEY IS NOT LESS THAN FD-IDCONTA
                INVALID KEY
@@ -156,8 +160,9 @@
                    DISPLAY "NENHUMA TRANSACAO - CONTA: " IDCONTA
                    EXIT PARAGRAPH
            END-START.
-       
-           PERFORM UNTIL WK-FS-CADTRANS NOT EQUAL "00"
+
+           PERFORM UNTIL WK-FS-CADTRANS NOT EQUAL "00" OR
+                           FD-IDCONTA   NOT EQUAL WK-CHAVEATUAL
                READ CADTRANS NEXT
                    AT END
                        MOVE "10" TO WK-FS-CADTRANS
@@ -166,11 +171,13 @@
                        PERFORM 0240-VALIDATE-CADTRANS-READ
                        DISPLAY "LIDO TRANSACAO - CONTA: " FD-IDCONTA
                        
-                       IF FD-IDCONTA NOT EQUAL IDCONTA
-                           MOVE "10" TO WK-FS-CADTRANS
+                       IF FD-IDTRANS EQUAL WK-ULTIMO-IDTRANS
+                           CONTINUE
                        ELSE
+                           MOVE FD-IDTRANS     TO WK-ULTIMO-IDTRANS
                            SET TEM-TRANSACAO   TO TRUE
-                           PERFORM 0499-MOSTRA-REGISTRO                              
+                           PERFORM 0499-MOSTRA-REGISTRO
+                           
                            EVALUATE FD-TIPO
                                WHEN 1
                                    SUBTRACT FD-VALOR FROM SALDOFINAL
@@ -182,9 +189,9 @@
                            DISPLAY "SALDO PARCIAL: " SALDOFINAL
                        END-IF
                END-READ
-           END-PERFORM.    
-               
-           DISPLAY "TOTAL CONTA " IDCONTA ": " SALDOFINAL.     
+           END-PERFORM.
+
+           DISPLAY "TOTAL CONTA " IDCONTA ": " SALDOFINAL.
       *---> Mostra registro antes de reescrever
        0499-MOSTRA-REGISTRO.
            DISPLAY "==========REGISTRO CADTRANS==========".
