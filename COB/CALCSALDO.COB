@@ -14,16 +14,16 @@
        FILE-CONTROL.
            SELECT CADCONTA ASSIGN TO "C:\teste\cadconta.dat"
                ORGANIZATION IS INDEXED
-               ACCESS MODE IS SEQUENTIAL
-               RECORD KEY IS IDCONTA
-               FILE STATUS IS WK-FS-CADCONTA.
+               ACCESS MODE  IS SEQUENTIAL
+               RECORD KEY   IS IDCONTA
+               FILE STATUS  IS WK-FS-CADCONTA.
 
            SELECT CADTRANS ASSIGN TO "C:\teste\cadtrans.dat"
                ORGANIZATION IS INDEXED
-               ACCESS MODE IS DYNAMIC
-               RECORD KEY IS FD-IDTRANS
+               ACCESS MODE  IS DYNAMIC
+               RECORD KEY   IS FD-IDTRANS
                ALTERNATE RECORD KEY IS FD-IDCONTA
-               FILE STATUS IS WK-FS-CADTRANS.
+               FILE STATUS  IS WK-FS-CADTRANS.
       ******************************************************************
        DATA DIVISION.
        FILE SECTION.
@@ -121,69 +121,70 @@
                WHEN OTHER
                    DISPLAY "ERRO: " WK-FS-CADCONTA
                            " NA REESCRITA DO ARQUIVO CADCONTA"
-                   STOP RUN
+                   PERFORM 0410-CLOSE-DATA THRU 0510-END-PROGRAM
            END-EVALUATE.
       ******************************************************************
        0300-PROCESS-DATA SECTION.
        0310-PROCESS-DATA.
-           READ CADCONTA
-               AT END
-                   MOVE "10" TO WK-FS-CADCONTA
-           END-READ.
-           PERFORM 0230-VALIDATE-CADCONTA-READ.
+           PERFORM UNTIL WK-FS-CADCONTA NOT EQUAL "00"
+               READ CADCONTA
+                   AT END
+                       MOVE "10" TO WK-FS-CADCONTA
+                   NOT AT END    
+                       PERFORM 0230-VALIDATE-CADCONTA-READ
+                       MOVE IDCONTA TO FD-IDCONTA
+                       PERFORM 0320-VERIFICA-TRANSACAO
 
-           MOVE IDCONTA TO FD-IDCONTA.
-
-           PERFORM 0320-VERIFICA-TRANSACAO.
-
-           IF TEM-TRANSACAO
-               MOVE SALDOFINAL TO SALDOINI
-               REWRITE REG-CTA
-               PERFORM 0250-VALIDATE-CADCONTA-REWRITE
-               DISPLAY "REESCRITO COM SUCESSO"
-           END-IF.
+                       IF TEM-TRANSACAO
+                           MOVE SALDOFINAL TO SALDOINI
+                           REWRITE REG-CTA
+                           PERFORM 0250-VALIDATE-CADCONTA-REWRITE
+                           DISPLAY "REESCRITO SUCESSO - CONTA: "IDCONTA
+                       END-IF
+               END-READ       
+           END-PERFORM.
       *
        0320-VERIFICA-TRANSACAO.
-           SET NAO-TEM-TRANSACAO           TO TRUE.
-           MOVE SALDOINI TO SALDOFINAL.
+           SET     NAO-TEM-TRANSACAO      TO TRUE.
+           MOVE    SALDOINI               TO SALDOFINAL.
+           
+           MOVE "00" TO WK-FS-CADTRANS.
 
-           MOVE IDCONTA TO FD-IDTRANS
-
-           START CADTRANS KEY IS EQUAL FD-IDCONTA
+           START CADTRANS KEY IS NOT LESS THAN FD-IDCONTA
                INVALID KEY
-                   DISPLAY "SEM TRANSACOES NA CONTA...." FD-IDCONTA
+                   MOVE "10" TO WK-FS-CADTRANS
+                   DISPLAY "NENHUMA TRANSACAO - CONTA: " IDCONTA
                    EXIT PARAGRAPH
            END-START.
-           PERFORM 0321-LE-TRANSACOES UNTIL WK-FS-CADTRANS EQUAL "10".
-      *
-       0321-LE-TRANSACOES.
-           READ CADTRANS NEXT
-               AT END
-                   MOVE "10" TO WK-FS-CADTRANS
-                   EXIT PARAGRAPH
-           END-READ.
-           PERFORM 0240-VALIDATE-CADTRANS-READ.
-
-           PERFORM 0499-MOSTRA-REGISTRO.
-
-           IF FD-IDCONTA LESS THAN IDCONTA
-               EXIT PARAGRAPH
-           END-IF
-
-           IF FD-IDCONTA GREATER THAN IDCONTA
-               EXIT PARAGRAPH
-           END-IF
-
-           IF FD-IDCONTA EQUAL IDCONTA
-               SET TEM-TRANSACAO           TO TRUE
-               EVALUATE FD-TIPO
-                   WHEN 1
-                       SUBTRACT FD-VALOR FROM SALDOFINAL
-                   WHEN 2
-                       ADD      FD-VALOR TO SALDOFINAL
-               END-EVALUATE
-           END-IF.
-
+       
+           PERFORM UNTIL WK-FS-CADTRANS NOT EQUAL "00"
+               READ CADTRANS NEXT
+                   AT END
+                       MOVE "10" TO WK-FS-CADTRANS
+                       EXIT PARAGRAPH
+                   NOT AT END
+                       PERFORM 0240-VALIDATE-CADTRANS-READ
+                       DISPLAY "LIDO TRANSACAO - CONTA: " FD-IDCONTA
+                       
+                       IF FD-IDCONTA NOT EQUAL IDCONTA
+                           MOVE "10" TO WK-FS-CADTRANS
+                       ELSE
+                           SET TEM-TRANSACAO   TO TRUE
+                           PERFORM 0499-MOSTRA-REGISTRO                              
+                           EVALUATE FD-TIPO
+                               WHEN 1
+                                   SUBTRACT FD-VALOR FROM SALDOFINAL
+                                   DISPLAY "DEBITO: " FD-VALOR
+                               WHEN 2
+                                   ADD      FD-VALOR TO SALDOFINAL
+                                   DISPLAY "CREDITO: " FD-VALOR
+                           END-EVALUATE
+                           DISPLAY "SALDO PARCIAL: " SALDOFINAL
+                       END-IF
+               END-READ
+           END-PERFORM.    
+               
+           DISPLAY "TOTAL CONTA " IDCONTA ": " SALDOFINAL.     
       *---> Mostra registro antes de reescrever
        0499-MOSTRA-REGISTRO.
            DISPLAY "==========REGISTRO CADTRANS==========".
