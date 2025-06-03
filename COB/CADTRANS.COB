@@ -4,7 +4,7 @@
       * AUTHOR      : EDU360 COLLAB TEAM                               *
       *               THIAGO SOUZA                                     *
       * DATA CENTER : COMPANY.EDUC360                                  *
-      * PURPOSE     : CARREGAR TRANSAÃ‡OES DE UM ARQUIVO SEQUENCIAL     *
+      * PURPOSE     : CARREGAR TRANSACOES DE UM ARQUIVO SEQUENCIAL     *
       *                PARA UM INDEXADO                                *
       ******************************************************************
        IDENTIFICATION DIVISION.
@@ -122,8 +122,6 @@
                    PERFORM 0330-MOSTRA-REGISTRO-ANTES
 
                    MOVE WK-CONTADOR TO FD-IDTRANS
-
-                   ADD 1 TO WK-CONTADOR
 
                    WRITE REG-CADTRANS
                    PERFORM 0240-VALIDATE-CADTRANS-WRITE
